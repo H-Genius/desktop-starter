@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "author": "heaobin",
+  "author": "H-Genius <junlinn1028@163.com>",
   "description": "A Vue 3 + Electron desktop launcher for managing local model runtime configuration files.",
   "repository": {
     "type": "git",
@@ -75,6 +75,7 @@
     },
     "linux": {
       "category": "Development",
+      "maintainer": "H-Genius <junlinn1028@163.com>",
       "target": [
         "AppImage",
         "deb",
