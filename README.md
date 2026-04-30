@@ -52,7 +52,7 @@
 resources/scripts/install.sh
 ```
 
-它负责安装或补齐大模型运行前需要的基础环境。
+它只负责安装或补齐大模型运行前需要的基础环境，不负责安装 Ghostty、Clash 这类额外工具。
 
 ### 第 3 步：检查前置环境是否齐全
 
@@ -66,6 +66,27 @@ resources/scripts/install.sh
 - `homebrew`（仅 macOS）
 
 如果这些环境都已经齐全，应用会提示前置环境已经准备好。
+
+不同平台的前置环境逻辑是：
+
+- Windows：
+  - 先检查 Git Bash
+  - 再检查 `uv / bun / nodejs / conda`
+  - Windows 不走 `homebrew`
+  - Windows 不走 `ghostty`
+  - Windows 也不走 `nvm`
+  - `Clash Verge` 单独按 `.exe` 是否存在来校验，必要时走 Windows 安装方式
+
+- macOS：
+  - 检查 `bash`
+  - 检查 `homebrew / uv / nvm / nodejs / bun / conda`
+  - 可以额外通过 Homebrew 安装 `Ghostty` 和 `Clash Verge`
+
+- Linux：
+  - 检查 `bash`
+  - 检查 `uv / nvm / nodejs / bun / conda`
+  - Linux 不走 `homebrew`
+  - `Ghostty` 和 `Clash Verge` 因发行版差异较大，建议按各自文档手动安装
 
 ### 第 4 步：最后再做大模型配置
 

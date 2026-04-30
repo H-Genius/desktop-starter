@@ -34,7 +34,7 @@ const ENVIRONMENT_REQUIREMENTS: Array<{
 }> = [
   { id: 'uv', label: 'uv：Python 包管理器', command: 'uv', args: ['--version'] },
   { id: 'miniconda', label: 'miniconda：Python 包管理器', command: 'conda', args: ['--version'] },
-  { id: 'nvm', label: 'nvm：Node.js 版本管理器', command: 'nvm', args: ['--version'] },
+  { id: 'nvm', label: 'nvm：Node.js 版本管理器', command: 'nvm', args: ['--version'], platforms: ['darwin', 'linux'] },
   { id: 'bun', label: 'bun：JavaScript 运行时与包管理器', command: 'bun', args: ['--version'] },
   { id: 'nodejs', label: 'nodejs', command: 'node', args: ['--version'] },
   { id: 'homebrew', label: 'homebrew：macOS 包管理器', command: 'brew', args: ['--version'], platforms: ['darwin'] },
