@@ -1,0 +1,7 @@
+{
+  "provider": "openai-compatible",
+  "apiKey": "replace-me",
+  "baseUrl": "https://api.openai.com/v1",
+  "organization": "",
+  "notes": "Fill this file with the credentials required by your selected model runtime."
+}

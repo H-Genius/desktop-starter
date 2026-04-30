@@ -1,0 +1,275 @@
+:root {
+  color-scheme: light;
+  --bg: #f4efe4;
+  --bg-strong: #e8dfcf;
+  --card: rgba(255, 250, 243, 0.82);
+  --card-border: rgba(62, 42, 24, 0.12);
+  --text: #20160f;
+  --muted: #6d5d4e;
+  --accent: #bf5b2c;
+  --accent-strong: #9e4318;
+  --emerald: #1b7f62;
+  --shadow: 0 30px 80px rgba(69, 44, 18, 0.12);
+  font-family: "IBM Plex Sans", "Noto Sans SC", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(191, 91, 44, 0.18), transparent 30%),
+    radial-gradient(circle at right center, rgba(27, 127, 98, 0.12), transparent 26%),
+    linear-gradient(135deg, #f7f1e7 0%, #efe4d3 48%, #f8f3ea 100%);
+}
+
+code,
+textarea {
+  font-family: "JetBrains Mono", "SFMono-Regular", monospace;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+select {
+  width: 100%;
+  border: 1px solid rgba(62, 42, 24, 0.12);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  font: inherit;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  padding: 28px;
+  border-right: 1px solid rgba(32, 22, 15, 0.08);
+  background: linear-gradient(180deg, rgba(255, 248, 239, 0.92), rgba(235, 226, 210, 0.82));
+  backdrop-filter: blur(18px);
+}
+
+.workspace {
+  padding: 32px;
+}
+
+.hero h1,
+.toolbar h2,
+.editor-head h3 {
+  margin: 0;
+  font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.hero h1 {
+  font-size: 42px;
+  line-height: 1.02;
+  margin-top: 10px;
+}
+
+.summary,
+.notice,
+.facts dd,
+.path {
+  color: var(--muted);
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  color: var(--accent-strong);
+}
+
+.panel,
+.editor-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.panel {
+  margin-top: 22px;
+  padding: 18px;
+}
+
+.install-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.install-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.install-form label span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent-strong);
+}
+
+.install-description {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.requirements {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(62, 42, 24, 0.08);
+}
+
+.requirements p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent-strong);
+}
+
+.requirements ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.install-button {
+  justify-self: start;
+}
+
+.panel-head,
+.editor-head,
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.facts {
+  margin: 18px 0 0;
+  display: grid;
+  gap: 16px;
+}
+
+.facts dt {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent-strong);
+}
+
+.facts dd {
+  margin: 6px 0 0;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(27, 127, 98, 0.12);
+  color: var(--emerald);
+  font-size: 12px;
+}
+
+.toolbar {
+  margin-bottom: 12px;
+}
+
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primary,
+.ghost {
+  padding: 12px 18px;
+  border-radius: 999px;
+}
+
+.primary {
+  color: #fff7ef;
+  background: linear-gradient(135deg, #c76331, #a4461d);
+}
+
+.ghost {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(62, 42, 24, 0.1);
+}
+
+.notice {
+  margin: 0 0 18px;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.editor-card {
+  padding: 18px;
+}
+
+.path {
+  margin: 10px 0 12px;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+textarea {
+  width: 100%;
+  min-height: 620px;
+  resize: vertical;
+  border: 1px solid rgba(62, 42, 24, 0.12);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@media (max-width: 1180px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(32, 22, 15, 0.08);
+  }
+
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,16 @@
+# Model runtime configuration
+# Update this file to point the app at your chosen model provider.
+
+model_provider = "default"
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+disable_response_storage = true
+
+
+[model_providers.default]
+name = "default"
+base_url = "https://relay.nf.video/v1"
+wire_api = "responses"
+
+[paths]
+workspace = "~/projects"

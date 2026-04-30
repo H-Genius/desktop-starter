@@ -1,0 +1,9 @@
+{
+  "id": "azure-openai",
+  "name": "Azure OpenAI",
+  "vendor": "Microsoft Azure",
+  "description": "Reuses the same file model, but usually points baseUrl and deployment metadata to Azure-hosted endpoints.",
+  "homepage": "https://learn.microsoft.com/azure/ai-services/openai/",
+  "tags": ["Azure", "Enterprise", "OpenAI Compatible"],
+  "managedFiles": ["auth.json", "config.toml"]
+}

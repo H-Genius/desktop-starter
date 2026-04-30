@@ -1,0 +1,19 @@
+{
+  "id": "qwen-local",
+  "name": "Qwen / Local Runtime",
+  "vendor": "Qwen",
+  "description": "Install the base Qwen CLI in your terminal workflow. This target does not require local auth.json or config.toml changes.",
+  "homepage": "https://qwenlm.github.io/",
+  "tags": ["Local", "Qwen", "Terminal Command"],
+  "managedFiles": ["auth.json", "config.toml"],
+  "modelOptions": [
+    {
+      "id": "qwen3-8b-local",
+      "name": "Qwen CLI",
+      "description": "Install the base Qwen CLI through your local terminal workflow.",
+      "supportedPlatforms": ["darwin", "linux", "win32"],
+      "requirements": ["nodejs / bun / brew 中至少一个可用"],
+      "scriptFile": "qwen_install.sh"
+    }
+  ]
+}

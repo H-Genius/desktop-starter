@@ -1,0 +1,9 @@
+{
+  "id": "anthropic",
+  "name": "Anthropic / Claude",
+  "vendor": "Anthropic",
+  "description": "Use Claude through Anthropic's hosted API. This is typically configured rather than installed locally.",
+  "homepage": "https://docs.anthropic.com/",
+  "tags": ["Hosted API", "Claude", "Anthropic"],
+  "managedFiles": ["auth.json", "config.toml"]
+}

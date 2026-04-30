@@ -1,0 +1,92 @@
+{
+  "name": "model-desktop-manager",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "author": "heaobin",
+  "description": "A Vue 3 + Electron desktop launcher for managing local model runtime configuration files.",
+  "main": "out/main/index.cjs",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "release": "npm run build && electron-builder --publish always"
+  },
+  "dependencies": {
+    "vue": "^3.5.16"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^4.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.1.4"
+  },
+  "build": {
+    "appId": "com.model.desktop.manager",
+    "productName": "Model Desktop Manager",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/templates",
+        "to": "templates"
+      },
+      {
+        "from": "resources/providers",
+        "to": "providers"
+      },
+      {
+        "from": "resources/scripts",
+        "to": "scripts"
+      }
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "artifactName": "${productName}-${version}-${arch}-mac.${ext}"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "artifactName": "${productName}-${version}-${arch}-win.${ext}"
+    },
+    "linux": {
+      "category": "Development",
+      "target": [
+        "AppImage",
+        "deb",
+        "tar.gz"
+      ],
+      "artifactName": "${productName}-${version}-${arch}-linux.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "releaseType": "draft"
+      }
+    ]
+  }
+}
