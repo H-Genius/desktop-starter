@@ -348,8 +348,7 @@ async function checkGitBash(): Promise<GitBashStatus> {
 
 function openWindowsGitBashInstaller(scriptPath: string) {
   const normalizedPath = scriptPath.replace(/\//g, '\\');
-  const command = `start "Git Bash Installer" cmd.exe /k "\"${normalizedPath}\""`;
-  const child = spawn('cmd.exe', ['/c', command], {
+  const child = spawn('cmd.exe', ['/c', 'start', '"Git Bash Installer"', 'cmd.exe', '/k', normalizedPath], {
     detached: true,
     stdio: 'ignore',
   });

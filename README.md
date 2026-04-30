@@ -177,7 +177,15 @@ resources/scripts/install.sh
 ### 1. 先拉代码
 
 ```bash
-git clone git@github.com:H-Genius/desktop-starter.git
+git clone https://gitclone.com/github.com/H-Genius/desktop-starter.git
+cd desktop-starter
+npm install
+```
+
+如果你的网络可以直连 GitHub，也可以使用原始地址：
+
+```bash
+git clone https://github.com/H-Genius/desktop-starter.git
 cd desktop-starter
 npm install
 ```
