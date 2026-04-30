@@ -5,6 +5,7 @@ import { app, ipcMain, shell, type IpcMainInvokeEvent } from 'electron';
 import type {
   ApplyModelTemplatePayload,
   DesktopPlatform,
+  EnvironmentRequirementStatus,
   GitBashStatus,
   InstallProviderPayload,
   ModelTemplatePayload,
@@ -22,6 +23,21 @@ const ENVIRONMENT_PREREQUISITES = [
   'bun：JavaScript 运行时与包管理器',
   'nodejs',
   'homebrew：macOS 包管理器',
+];
+
+const ENVIRONMENT_REQUIREMENTS: Array<{
+  id: string;
+  label: string;
+  command: string;
+  args?: string[];
+  platforms?: DesktopPlatform[];
+}> = [
+  { id: 'uv', label: 'uv：Python 包管理器', command: 'uv', args: ['--version'] },
+  { id: 'miniconda', label: 'miniconda：Python 包管理器', command: 'conda', args: ['--version'] },
+  { id: 'nvm', label: 'nvm：Node.js 版本管理器', command: 'nvm', args: ['--version'] },
+  { id: 'bun', label: 'bun：JavaScript 运行时与包管理器', command: 'bun', args: ['--version'] },
+  { id: 'nodejs', label: 'nodejs', command: 'node', args: ['--version'] },
+  { id: 'homebrew', label: 'homebrew：macOS 包管理器', command: 'brew', args: ['--version'], platforms: ['darwin'] },
 ];
 
 function getResourcesRoot() {
@@ -101,18 +117,20 @@ async function buildSnapshot(): Promise<WorkspaceSnapshot> {
   const platform = resolveDesktopPlatform();
   const workspaceHome = resolveWorkspaceHome();
   const { authPath, configPath } = resolveManagedFiles(workspaceHome);
-  const [authExists, configExists, authContent, configContent, providers] = await Promise.all([
+  const [authExists, configExists, authContent, configContent, providers, environmentStatuses] = await Promise.all([
     fileExists(authPath),
     fileExists(configPath),
     readOptionalFile(authPath),
     readOptionalFile(configPath),
     loadProviders(),
+    detectEnvironmentStatuses(platform),
   ]);
 
   return {
     platform,
     workspaceHome,
     environmentPrerequisites: ENVIRONMENT_PREREQUISITES,
+    environmentStatuses,
     auth: {
       path: authPath,
       exists: authExists,
@@ -240,6 +258,58 @@ function execCommand(command: string, args: string[]) {
   });
 }
 
+async function commandExists(command: string, args: string[] = ['--version']) {
+  try {
+    const result = await execCommand(command, args);
+    return result.code === 0;
+  } catch {
+    return false;
+  }
+}
+
+async function detectNvmInstalled() {
+  try {
+    const result = await execCommand('bash', [
+      '-lc',
+      'export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; command -v nvm >/dev/null 2>&1',
+    ]);
+    return result.code === 0;
+  } catch {
+    return false;
+  }
+}
+
+async function detectEnvironmentStatuses(platform: DesktopPlatform): Promise<EnvironmentRequirementStatus[]> {
+  const statuses = await Promise.all(
+    ENVIRONMENT_REQUIREMENTS.map(async (requirement) => {
+      const applicable = !requirement.platforms || requirement.platforms.includes(platform);
+
+      if (!applicable) {
+        return {
+          id: requirement.id,
+          label: requirement.label,
+          applicable: false,
+          installed: true,
+        };
+      }
+
+      const installed =
+        requirement.id === 'nvm'
+          ? await detectNvmInstalled()
+          : await commandExists(requirement.command, requirement.args);
+
+      return {
+        id: requirement.id,
+        label: requirement.label,
+        applicable: true,
+        installed,
+      };
+    })
+  );
+
+  return statuses;
+}
+
 async function checkGitBash(): Promise<GitBashStatus> {
   if (process.platform !== 'win32') {
     return {
@@ -349,6 +419,28 @@ async function installGitBash() {
   openWindowsGitBashInstaller(scriptPath);
 }
 
+async function installEnvironment() {
+  const scriptPath = join(getScriptsRoot(), 'install.sh');
+
+  if (process.platform === 'win32') {
+    const gitBashStatus = await checkGitBash();
+
+    if (!gitBashStatus.available) {
+      throw new Error('Windows 缺少 Git Bash，请先安装 Git Bash 再执行环境安装。');
+    }
+
+    openWindowsTerminal(scriptPath);
+    return;
+  }
+
+  if (process.platform === 'darwin') {
+    openMacTerminal(scriptPath);
+    return;
+  }
+
+  openLinuxTerminal(scriptPath);
+}
+
 export function registerDesktopHandlers() {
   ipcMain.handle('workspace:load', () => buildSnapshot());
   ipcMain.handle('workspace:save', (_event: IpcMainInvokeEvent, payload: WorkspaceSavePayload) =>
@@ -364,4 +456,5 @@ export function registerDesktopHandlers() {
   );
   ipcMain.handle('workspace:check-git-bash', () => checkGitBash());
   ipcMain.handle('workspace:install-git-bash', () => installGitBash());
+  ipcMain.handle('workspace:install-environment', () => installEnvironment());
 }

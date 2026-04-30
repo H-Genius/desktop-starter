@@ -28,10 +28,18 @@ export type ManagedFileState = {
   content: string;
 };
 
+export type EnvironmentRequirementStatus = {
+  id: string;
+  label: string;
+  applicable: boolean;
+  installed: boolean;
+};
+
 export type WorkspaceSnapshot = {
   platform: DesktopPlatform;
   workspaceHome: string;
   environmentPrerequisites: string[];
+  environmentStatuses: EnvironmentRequirementStatus[];
   auth: ManagedFileState;
   config: ManagedFileState;
   providers: ProviderManifest[];
@@ -72,4 +80,5 @@ export type DesktopBridge = {
   getModelTemplate: (payload: ApplyModelTemplatePayload) => Promise<ModelTemplatePayload>;
   checkGitBash: () => Promise<GitBashStatus>;
   installGitBash: () => Promise<void>;
+  installEnvironment: () => Promise<void>;
 };

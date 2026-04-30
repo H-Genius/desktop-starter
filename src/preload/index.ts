@@ -15,6 +15,7 @@ const api: DesktopBridge = {
   getModelTemplate: (payload: ApplyModelTemplatePayload) => ipcRenderer.invoke('workspace:model-template', payload),
   checkGitBash: () => ipcRenderer.invoke('workspace:check-git-bash'),
   installGitBash: () => ipcRenderer.invoke('workspace:install-git-bash'),
+  installEnvironment: () => ipcRenderer.invoke('workspace:install-environment'),
 };
 
 contextBridge.exposeInMainWorld('modelDesktop', api);

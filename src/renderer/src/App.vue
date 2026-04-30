@@ -51,6 +51,9 @@ const canApplyTemplate = computed(() => {
   return Boolean(selectedModelOption.value?.authTemplate || selectedModelOption.value?.configTemplate);
 });
 const isWindows = computed(() => snapshot.value?.platform === 'win32');
+const missingEnvironmentStatuses = computed(() => {
+  return (snapshot.value?.environmentStatuses ?? []).filter((item) => item.applicable && !item.installed);
+});
 const terminalEnvironmentLabel = computed(() => {
   if (isWindows.value) {
     return 'Windows Git Bash';
@@ -149,6 +152,29 @@ async function installGitBash() {
   }
 }
 
+async function installEnvironment() {
+  if (missingEnvironmentStatuses.value.length === 0) {
+    if (isWindows.value && !gitBashStatus.value?.available) {
+      notice.value = '前置环境已齐全，但 Windows 还缺少 Git Bash。';
+      window.alert('前置环境已准备好，但 Windows 还缺少 Git Bash，请先安装 Git Bash。');
+      return;
+    }
+
+    notice.value = '前置环境已准备好，无需重复安装。';
+    window.alert('前置环境已准备好，无需重复安装。');
+    return;
+  }
+
+  notice.value = '正在打开前置环境安装脚本...';
+
+  try {
+    await window.modelDesktop.installEnvironment();
+    notice.value = '已调起前置环境安装终端，安装完成后请点刷新重新检测。';
+  } catch (error) {
+    notice.value = `无法执行前置环境安装: ${String(error)}`;
+  }
+}
+
 async function installSelectedModel() {
   if (!selectedProvider.value || !selectedModelOption.value) {
     notice.value = '当前没有可执行的模型脚本。';
@@ -235,12 +261,25 @@ watch(selectedProviderId, () => {
       <div class="panel">
         <div class="panel-head">
           <span>环境前提</span>
-          <strong>{{ snapshot?.environmentPrerequisites.length ?? 0 }} items</strong>
+          <strong>{{ missingEnvironmentStatuses.length === 0 ? '已就绪' : `缺少 ${missingEnvironmentStatuses.length} 项` }}</strong>
         </div>
         <div class="requirements">
           <ul>
-            <li v-for="item in snapshot?.environmentPrerequisites ?? []" :key="item">{{ item }}</li>
+            <li
+              v-for="item in snapshot?.environmentStatuses ?? []"
+              :key="item.id"
+            >
+              <template v-if="item.applicable">
+                {{ item.installed ? '✅' : '❌' }} {{ item.label }}
+              </template>
+              <template v-else>
+                ⏭️ {{ item.label }}（当前系统无需）
+              </template>
+            </li>
           </ul>
+          <button class="ghost install-button" @click="installEnvironment">
+            安装前置环境
+          </button>
         </div>
       </div>
 
