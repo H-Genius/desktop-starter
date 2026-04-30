@@ -52,7 +52,7 @@
 resources/scripts/install.sh
 ```
 
-它只负责安装或补齐大模型运行前需要的基础环境，不负责安装 Ghostty、Clash 这类额外工具。
+它会优先补齐大模型运行前需要的基础环境；在支持的平台上，也可以顺带安装 Ghostty、Clash Verge 这类常用工具。
 
 ### 第 3 步：检查前置环境是否齐全
 
@@ -73,20 +73,16 @@ resources/scripts/install.sh
   - 先检查 Git Bash
   - 再检查 `uv / bun / nodejs / conda`
   - Windows 不走 `homebrew`
-  - Windows 不走 `ghostty`
   - Windows 也不走 `nvm`
-  - `Clash Verge` 单独按 `.exe` 是否存在来校验，必要时走 Windows 安装方式
 
 - macOS：
   - 检查 `bash`
   - 检查 `homebrew / uv / nvm / nodejs / bun / conda`
-  - 可以额外通过 Homebrew 安装 `Ghostty` 和 `Clash Verge`
 
 - Linux：
   - 检查 `bash`
   - 检查 `uv / nvm / nodejs / bun / conda`
   - Linux 不走 `homebrew`
-  - `Ghostty` 和 `Clash Verge` 因发行版差异较大，建议按各自文档手动安装
 
 ### 第 4 步：最后再做大模型配置
 
@@ -96,6 +92,166 @@ resources/scripts/install.sh
 - 执行模型安装脚本
 - 如果该模型有模板，就套用配置
 - 保存 `auth.json` 和 `config.toml`
+
+## 别人怎么下载安装包使用
+
+如果别人不想自己拉代码，而是直接下载安装包使用，可以按下面流程操作。
+
+### 1. 先下载对应系统的安装包
+
+下载时只需要选自己系统对应的版本：
+
+- Windows：下载 Windows 安装包
+- macOS：下载 macOS 安装包
+- Linux：下载 Linux 安装包
+
+### 2. 安装并打开应用
+
+安装完成后，直接打开应用即可。
+
+首次打开后，应用会自动管理配置文件。
+
+### 3. 打开应用后先检查终端环境
+
+打开应用后，建议先点环境检查相关按钮。
+
+系统处理逻辑是：
+
+- Windows：先检查有没有 `Git Bash`
+- 如果没有 `Git Bash`，就先安装 `Git Bash`
+- macOS / Linux：检查 `bash`
+- macOS / Linux 一般系统自带 `bash`，通常直接可用
+
+### 4. 再安装前置环境
+
+终端环境没问题后，再点击：
+
+```text
+安装前置环境
+```
+
+这个按钮会执行：
+
+```text
+resources/scripts/install.sh
+```
+
+它的作用是补齐模型 CLI 运行需要的基础环境。
+
+### 5. 前置环境装好后，刷新检查结果
+
+执行完安装脚本后，回到应用点击刷新，确认环境状态。
+
+会按平台检查这些项目：
+
+- Windows：`uv / bun / nodejs / conda`
+- macOS：`homebrew / uv / nvm / nodejs / bun / conda`
+- Linux：`uv / nvm / nodejs / bun / conda`
+
+如果这些环境都已经存在，应用会提示前置环境已经准备好。
+
+### 6. 最后安装模型 CLI 并填写配置
+
+前置环境没问题后，再进行模型部分：
+
+- 在下拉框里选择目标模型
+- 点击对应安装按钮
+- 应用会调起终端执行对应的 `.sh` 脚本
+- 如果该模型需要配置，就再填写 `auth.json` 和 `config.toml`
+
+这一步完成之后，用户就可以继续在自己的终端里使用对应模型 CLI。
+
+### 7. 如果配置文件还没有生成
+
+应用管理的是这两个文件：
+
+- `auth.json`
+- `config.toml`
+
+如果本地还没有这两个文件，可以在应用里点击“写入模板”自动生成，再按实际需要修改。
+
+## 别人怎么拉代码和使用
+
+如果别人不是直接拿安装包，而是要自己拉代码运行，可以按下面流程操作。
+
+### 1. 先拉代码
+
+```bash
+git clone git@github.com:H-Genius/desktop-starter.git
+cd desktop-starter
+npm install
+```
+
+### 2. 启动应用
+
+```bash
+npm run dev
+```
+
+如果本机环境里带了 `ELECTRON_RUN_AS_NODE=1`，就这样启动：
+
+```bash
+env -u ELECTRON_RUN_AS_NODE npm run dev
+```
+
+### 3. 打开应用后先检查终端环境
+
+打开应用后，建议先点环境检查相关按钮。
+
+系统处理逻辑是：
+
+- Windows：先检查有没有 `Git Bash`
+- 如果没有 `Git Bash`，就先安装 `Git Bash`
+- macOS / Linux：检查 `bash`
+- macOS / Linux 一般系统自带 `bash`，通常直接可用
+
+### 4. 再安装前置环境
+
+终端环境没问题后，再点击：
+
+```text
+安装前置环境
+```
+
+这个按钮会执行：
+
+```text
+resources/scripts/install.sh
+```
+
+它的作用是补齐模型 CLI 运行需要的基础环境。
+
+### 5. 前置环境装好后，刷新检查结果
+
+执行完安装脚本后，回到应用点击刷新，确认环境状态。
+
+会按平台检查这些项目：
+
+- Windows：`uv / bun / nodejs / conda`
+- macOS：`homebrew / uv / nvm / nodejs / bun / conda`
+- Linux：`uv / nvm / nodejs / bun / conda`
+
+如果这些环境都已经存在，应用会提示前置环境已经准备好。
+
+### 6. 最后安装模型 CLI 并填写配置
+
+前置环境没问题后，再进行模型部分：
+
+- 在下拉框里选择目标模型
+- 点击对应安装按钮
+- 应用会调起终端执行对应的 `.sh` 脚本
+- 如果该模型需要配置，就再填写 `auth.json` 和 `config.toml`
+
+这一步完成之后，用户就可以继续在自己的终端里使用对应模型 CLI。
+
+### 7. 如果配置文件还没有生成
+
+应用管理的是这两个文件：
+
+- `auth.json`
+- `config.toml`
+
+如果本地还没有这两个文件，可以在应用里点击“写入模板”自动生成，再按实际需要修改。
 
 ## 先看目录
 
@@ -200,33 +356,6 @@ npm run dist:linux
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
-```
-
-## 用户配置文件放哪里
-
-默认目录：
-
-```text
-~/.codex
-```
-
-这个应用主要管理两个文件：
-
-- `auth.json`
-- `config.toml`
-
-如果文件不存在，可以在应用里点击“写入模板”自动生成。
-
-也可以通过环境变量改目录：
-
-```bash
-MODEL_DESKTOP_HOME=/your/path npm run dev
-```
-
-兼容旧变量：
-
-```bash
-CODEX_HOME=/your/path npm run dev
 ```
 
 ## 怎么新增一个模型

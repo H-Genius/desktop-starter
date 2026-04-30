@@ -308,6 +308,14 @@ app_exists_macos() {
     [ -d "/Applications/${app_name}.app" ] || [ -d "$HOME/Applications/${app_name}.app" ]
 }
 
+ghostty_installed_linux() {
+    command_exists ghostty || [ -f "/usr/share/applications/com.mitchellh.ghostty.desktop" ] || [ -f "$HOME/.local/share/applications/com.mitchellh.ghostty.desktop" ]
+}
+
+clash_verge_installed_linux() {
+    command_exists clash-verge || [ -f "/usr/share/applications/clash-verge.desktop" ] || [ -f "$HOME/.local/share/applications/clash-verge.desktop" ]
+}
+
 install_ghostty_macos() {
     if app_exists_macos "Ghostty"; then
         log_success "Ghostty 已安装"
@@ -322,6 +330,45 @@ install_ghostty_macos() {
     log_info "Installing Ghostty..."
     brew install --cask ghostty
     log_success "Ghostty 安装完成"
+}
+
+install_ghostty_linux() {
+    if ghostty_installed_linux; then
+        log_success "Ghostty 已安装"
+        return 0
+    fi
+
+    if command_exists pacman; then
+        log_info "Installing Ghostty via pacman..."
+        sudo pacman -S --noconfirm ghostty
+        log_success "Ghostty 安装完成"
+        return 0
+    fi
+
+    if command_exists dnf; then
+        log_info "Installing Ghostty via Fedora COPR..."
+        sudo dnf copr enable -y scottames/ghostty
+        sudo dnf install -y ghostty
+        log_success "Ghostty 安装完成"
+        return 0
+    fi
+
+    if command_exists apt-get; then
+        log_info "Installing Ghostty via Ubuntu community installer..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)"
+        log_success "Ghostty 安装完成"
+        return 0
+    fi
+
+    if command_exists snap; then
+        log_info "Installing Ghostty via snap..."
+        sudo snap install ghostty --classic
+        log_success "Ghostty 安装完成"
+        return 0
+    fi
+
+    log_warning "当前 Linux 发行版没有可自动执行的 Ghostty 安装路径。"
+    return 1
 }
 
 install_clash_verge_macos() {
@@ -381,6 +428,96 @@ install_clash_verge_windows() {
     return 1
 }
 
+detect_clash_verge_tag() {
+    curl -fsSL https://api.github.com/repos/clash-verge-rev/clash-verge-rev/releases/latest \
+        | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' \
+        | head -n 1
+}
+
+install_clash_verge_linux() {
+    if clash_verge_installed_linux; then
+        log_success "Clash Verge 已安装"
+        return 0
+    fi
+
+    local tag_name
+    tag_name="$(detect_clash_verge_tag)"
+    if [ -z "$tag_name" ]; then
+        log_warning "无法获取 Clash Verge 最新版本信息"
+        return 1
+    fi
+
+    local version="${tag_name#v}"
+    local arch
+    arch="$(uname -m)"
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+
+    if command_exists apt-get; then
+        local deb_arch
+        case "$arch" in
+            x86_64) deb_arch="amd64" ;;
+            aarch64|arm64) deb_arch="arm64" ;;
+            armv7l|armhf) deb_arch="armhf" ;;
+            *)
+                log_warning "Clash Verge 暂不支持当前 Linux 架构：$arch"
+                rm -rf "$tmp_dir"
+                return 1
+                ;;
+        esac
+
+        local deb_file="Clash.Verge_${version}_${deb_arch}.deb"
+        local deb_path="${tmp_dir}/${deb_file}"
+        log_info "Installing Clash Verge via deb package..."
+        curl -fsSL "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/${tag_name}/${deb_file}" -o "${deb_path}"
+        sudo apt install -y "${deb_path}"
+        rm -rf "$tmp_dir"
+        log_success "Clash Verge 安装完成"
+        return 0
+    fi
+
+    if command_exists dnf || command_exists yum; then
+        local rpm_arch
+        case "$arch" in
+            x86_64) rpm_arch="x86_64" ;;
+            aarch64|arm64) rpm_arch="aarch64" ;;
+            armv7l|armhf) rpm_arch="armhfp" ;;
+            *)
+                log_warning "Clash Verge 暂不支持当前 Linux 架构：$arch"
+                rm -rf "$tmp_dir"
+                return 1
+                ;;
+        esac
+
+        local rpm_file="Clash.Verge-${version}-1.${rpm_arch}.rpm"
+        local rpm_path="${tmp_dir}/${rpm_file}"
+        log_info "Installing Clash Verge via rpm package..."
+        curl -fsSL "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/${tag_name}/${rpm_file}" -o "${rpm_path}"
+
+        if command_exists dnf; then
+            sudo dnf install -y "${rpm_path}"
+        else
+            sudo yum localinstall -y "${rpm_path}"
+        fi
+
+        rm -rf "$tmp_dir"
+        log_success "Clash Verge 安装完成"
+        return 0
+    fi
+
+    if command_exists yay; then
+        log_info "Installing Clash Verge via yay..."
+        yay -S --noconfirm clash-verge-rev-bin
+        rm -rf "$tmp_dir"
+        log_success "Clash Verge 安装完成"
+        return 0
+    fi
+
+    rm -rf "$tmp_dir"
+    log_warning "当前 Linux 发行版没有可自动执行的 Clash Verge 安装路径。"
+    return 1
+}
+
 main() {
     local platform
     platform=$(uname -s)
@@ -408,7 +545,8 @@ main() {
             check_and_install_nodejs || log_warning "Node.js installation failed"
             install_bun || log_warning "Bun installation failed"
             install_miniconda_linux || log_warning "Miniconda installation failed"
-            log_info "Ghostty / Clash Verge are skipped on Linux. Install them manually if needed."
+            install_ghostty_linux || log_warning "Ghostty installation failed"
+            install_clash_verge_linux || log_warning "Clash Verge installation failed"
             ;;
         MINGW*|CYGWIN*|MSYS*)
             check_and_install_nodejs || true
@@ -420,7 +558,7 @@ main() {
                 log_info "请先安装 Miniconda: https://docs.conda.io/en/latest/miniconda.html"
             fi
             install_clash_verge_windows || true
-            log_info "Windows 下忽略 Homebrew 和 Ghostty。"
+            log_info "Windows 下忽略 Homebrew、nvm 和 Ghostty。"
             ;;
         *)
             log_error "Unsupported platform: $platform"

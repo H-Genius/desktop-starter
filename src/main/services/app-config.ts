@@ -202,7 +202,16 @@ function openWindowsTerminal(scriptPath: string) {
   child.unref();
 }
 
-function openLinuxTerminal(scriptPath: string) {
+async function commandInPath(command: string) {
+  try {
+    const result = await execCommand('bash', ['-lc', `command -v ${JSON.stringify(command)} >/dev/null 2>&1`]);
+    return result.code === 0;
+  } catch {
+    return false;
+  }
+}
+
+async function openLinuxTerminal(scriptPath: string) {
   const terminalCommand = `chmod +x "${scriptPath}" && bash "${scriptPath}"`;
   const launchers: Array<[string, string[]]> = [
     ['x-terminal-emulator', ['-e', 'bash', '-lc', terminalCommand]],
@@ -214,6 +223,10 @@ function openLinuxTerminal(scriptPath: string) {
   let lastError: unknown;
 
   for (const [command, args] of launchers) {
+    if (!(await commandInPath(command))) {
+      continue;
+    }
+
     try {
       const child = spawn(command, args, {
         detached: true,
@@ -407,7 +420,7 @@ async function installProvider(payload: InstallProviderPayload) {
     return;
   }
 
-  openLinuxTerminal(scriptPath);
+  await openLinuxTerminal(scriptPath);
 }
 
 async function installGitBash() {
@@ -438,7 +451,7 @@ async function installEnvironment() {
     return;
   }
 
-  openLinuxTerminal(scriptPath);
+  await openLinuxTerminal(scriptPath);
 }
 
 export function registerDesktopHandlers() {
