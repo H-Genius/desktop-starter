@@ -24,7 +24,7 @@
 - 编辑 `config.toml`
 - 选择不同模型目标
 - 调起安装脚本
-- Windows 下检测 Git Bash
+- Windows 下原生 `.bat` 安装流程
 - GitHub Actions 自动构建三平台安装包
 
 ## 推荐使用流程
@@ -33,10 +33,9 @@
 
 ### 第 1 步：先检查终端环境
 
-- Windows：先检查 `Git Bash`
-- 如果没有 `Git Bash`，先安装 `Git Bash`
-- macOS / Linux：也会检查 `bash`
-- 但 macOS / Linux 的 `bash` 一般是系统自带的，通常不需要额外安装
+- Windows：使用原生 `cmd/PowerShell + .bat` 流程
+- macOS / Linux：检查 `bash`
+- macOS / Linux 的 `bash` 一般是系统自带的，通常不需要额外安装
 
 ### 第 2 步：安装前置环境
 
@@ -46,11 +45,10 @@
 安装前置环境
 ```
 
-这个按钮会去执行：
+这个按钮会按平台执行：
 
-```text
-resources/scripts/install.sh
-```
+- Windows：`resources/scripts/install.bat`
+- macOS / Linux：`resources/scripts/install.sh`
 
 它会优先补齐大模型运行前需要的基础环境；在支持的平台上，也可以顺带安装 Ghostty、Clash Verge 这类常用工具。
 
@@ -70,7 +68,6 @@ resources/scripts/install.sh
 不同平台的前置环境逻辑是：
 
 - Windows：
-  - 先检查 Git Bash
   - 再检查 `uv / bun / nodejs / conda`
   - Windows 不走 `homebrew`
   - Windows 也不走 `nvm`
@@ -117,8 +114,7 @@ resources/scripts/install.sh
 
 系统处理逻辑是：
 
-- Windows：先检查有没有 `Git Bash`
-- 如果没有 `Git Bash`，就先安装 `Git Bash`
+- Windows：使用原生 `.bat` 脚本流程
 - macOS / Linux：检查 `bash`
 - macOS / Linux 一般系统自带 `bash`，通常直接可用
 
@@ -130,11 +126,10 @@ resources/scripts/install.sh
 安装前置环境
 ```
 
-这个按钮会执行：
+这个按钮会按平台执行：
 
-```text
-resources/scripts/install.sh
-```
+- Windows：`resources/scripts/install.bat`
+- macOS / Linux：`resources/scripts/install.sh`
 
 它的作用是补齐模型 CLI 运行需要的基础环境。
 
@@ -156,7 +151,7 @@ resources/scripts/install.sh
 
 - 在下拉框里选择目标模型
 - 点击对应安装按钮
-- 应用会调起终端执行对应的 `.sh` 脚本
+- Windows 会调起对应 `.bat` 脚本，macOS / Linux 会调起对应 `.sh` 脚本
 - 如果该模型需要配置，就再填写 `auth.json` 和 `config.toml`
 
 这一步完成之后，用户就可以继续在自己的终端里使用对应模型 CLI。
@@ -208,8 +203,7 @@ env -u ELECTRON_RUN_AS_NODE npm run dev
 
 系统处理逻辑是：
 
-- Windows：先检查有没有 `Git Bash`
-- 如果没有 `Git Bash`，就先安装 `Git Bash`
+- Windows：使用原生 `.bat` 脚本流程
 - macOS / Linux：检查 `bash`
 - macOS / Linux 一般系统自带 `bash`，通常直接可用
 
@@ -221,11 +215,10 @@ env -u ELECTRON_RUN_AS_NODE npm run dev
 安装前置环境
 ```
 
-这个按钮会执行：
+这个按钮会按平台执行：
 
-```text
-resources/scripts/install.sh
-```
+- Windows：`resources/scripts/install.bat`
+- macOS / Linux：`resources/scripts/install.sh`
 
 它的作用是补齐模型 CLI 运行需要的基础环境。
 
@@ -247,7 +240,7 @@ resources/scripts/install.sh
 
 - 在下拉框里选择目标模型
 - 点击对应安装按钮
-- 应用会调起终端执行对应的 `.sh` 脚本
+- Windows 会调起对应 `.bat` 脚本，macOS / Linux 会调起对应 `.sh` 脚本
 - 如果该模型需要配置，就再填写 `auth.json` 和 `config.toml`
 
 这一步完成之后，用户就可以继续在自己的终端里使用对应模型 CLI。
@@ -274,7 +267,7 @@ resources/scripts/install.sh
   - 打开目录
   - 打开终端
   - 执行安装脚本
-  - Windows 检测 Git Bash
+  - 平台脚本分发（Windows `.bat` / macOS Linux `.sh`）
 
 - `resources/providers/`
   这里放“模型提供方配置”
@@ -283,9 +276,9 @@ resources/scripts/install.sh
 - `resources/scripts/`
   这里放安装脚本
   比如：
-  - `qwen_install.sh`
-  - `install-openai-cli.sh`
-  - `gitBash_install.bat`
+  - `qwen_install.sh` / `qwen_install.bat`
+  - `install-openai-cli.sh` / `install-openai-cli.bat`
+  - `install.sh` / `install.bat`
 
 - `resources/templates/`
   这里放默认模板：
@@ -390,7 +383,7 @@ git push origin v0.1.0
       "name": "Qwen CLI",
       "description": "Install Qwen CLI.",
       "supportedPlatforms": ["darwin", "linux", "win32"],
-      "scriptFile": "qwen_install.sh"
+      "scriptFile": "qwen_install"
     }
   ]
 }
@@ -407,37 +400,28 @@ resources/scripts/
 例如：
 
 ```text
-qwen_install.sh
+qwen_install (按平台自动匹配 .bat / .sh)
 ```
 
 然后在上面的 provider json 里通过 `scriptFile` 指向它。
 
 ## Windows 额外说明
 
-Windows 下执行 `.sh` 安装脚本，需要 Git Bash。
+Windows 现在使用原生 `.bat` 脚本，不再依赖 Git Bash。
 
-项目里已经做了这些处理：
-- 自动检测是否存在 Git Bash
-- 如果没有，就显示“安装 Git Bash”按钮
-- Windows 下点击“安装前置环境”时，也会先检查 Git Bash
-- 只有 Git Bash 已安装，才会继续执行 `install.sh`
-- Git Bash 安装脚本是：
+核心脚本包括：
 
 ```text
-resources/scripts/gitBash_install.bat
-```
-
-前置环境安装脚本是：
-
-```text
-resources/scripts/install.sh
+resources/scripts/install.bat
+resources/scripts/qwen_install.bat
+resources/scripts/install-openai-cli.bat
 ```
 
 ## macOS / Linux 额外说明
 
 macOS 和 Linux 也会检查 `bash` 环境。
 
-但这两个系统一般本身就带有终端和 `bash`，所以通常不需要像 Windows 一样额外安装 Git Bash。
+但这两个系统一般本身就带有终端和 `bash`，通常不需要额外安装。
 
 正常流程是：
 - 先确认终端环境可用
@@ -471,7 +455,6 @@ src/main/services/app-config.ts
 - 检测平台
 - 打开终端
 - 执行安装脚本
-- 检测 Git Bash
 - 读取 provider 配置
 
 ## 如果你只想改模板内容

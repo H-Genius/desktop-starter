@@ -7,8 +7,16 @@ export type ProviderModelOption = {
   supportedPlatforms: DesktopPlatform[];
   requirements?: string[];
   scriptFile?: string;
+  checkCommand?: string;  // 用于检查是否已安装的命令，如 'qwen'、'codex'
   authTemplate?: string;
   configTemplate?: string;
+};
+
+export type ProviderInstallStatus = {
+  providerId: string;
+  modelOptionId: string;
+  installed: boolean;
+  version?: string;
 };
 
 export type ProviderManifest = {
@@ -66,19 +74,13 @@ export type ModelTemplatePayload = {
   configContent: string;
 };
 
-export type GitBashStatus = {
-  available: boolean;
-  path: string | null;
-};
-
 export type DesktopBridge = {
   loadWorkspace: () => Promise<WorkspaceSnapshot>;
   saveWorkspace: (payload: WorkspaceSavePayload) => Promise<WorkspaceSnapshot>;
   seedTemplates: () => Promise<WorkspaceSnapshot>;
   openWorkspaceDirectory: () => Promise<void>;
   installProvider: (payload: InstallProviderPayload) => Promise<void>;
+  checkProviderInstalled: (payload: InstallProviderPayload) => Promise<ProviderInstallStatus>;
   getModelTemplate: (payload: ApplyModelTemplatePayload) => Promise<ModelTemplatePayload>;
-  checkGitBash: () => Promise<GitBashStatus>;
-  installGitBash: () => Promise<void>;
   installEnvironment: () => Promise<void>;
 };

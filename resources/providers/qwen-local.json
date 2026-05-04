@@ -13,7 +13,8 @@
       "description": "Install the base Qwen CLI through your local terminal workflow.",
       "supportedPlatforms": ["darwin", "linux", "win32"],
       "requirements": ["nodejs / bun / brew 中至少一个可用"],
-      "scriptFile": "qwen_install.sh"
+      "scriptFile": "qwen_install",
+      "checkCommand": "qwen"
     }
   ]
 }

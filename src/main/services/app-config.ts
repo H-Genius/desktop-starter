@@ -6,9 +6,9 @@ import type {
   ApplyModelTemplatePayload,
   DesktopPlatform,
   EnvironmentRequirementStatus,
-  GitBashStatus,
   InstallProviderPayload,
   ModelTemplatePayload,
+  ProviderInstallStatus,
   ProviderModelOption,
   ProviderManifest,
   WorkspaceSavePayload,
@@ -46,13 +46,6 @@ function getResourcesRoot() {
 
 function getScriptsRoot() {
   return join(getResourcesRoot(), 'scripts');
-}
-
-function getWindowsGitBashPathCandidates() {
-  return [
-    'C:\\Program Files\\Git\\git-bash.exe',
-    'C:\\Program Files (x86)\\Git\\git-bash.exe',
-  ];
 }
 
 function resolveDesktopPlatform(): DesktopPlatform {
@@ -192,14 +185,35 @@ function openMacTerminal(scriptPath: string) {
   child.unref();
 }
 
-function openWindowsTerminal(scriptPath: string) {
-  const escapedScriptPath = scriptPath.replace(/\\/g, '/').replace(/'/g, "'\\''");
-  const gitBashCommand = `if exist "%ProgramFiles%\\Git\\git-bash.exe" (start "Model Installer" "%ProgramFiles%\\Git\\git-bash.exe" --login -i -c "bash '${escapedScriptPath}'") else if exist "%ProgramFiles(x86)%\\Git\\git-bash.exe" (start "Model Installer" "%ProgramFiles(x86)%\\Git\\git-bash.exe" --login -i -c "bash '${escapedScriptPath}'") else (echo Git Bash was not found. && pause)`;
-  const child = spawn('cmd.exe', ['/c', gitBashCommand], {
-    detached: true,
-    stdio: 'ignore',
-  });
+function openWindowsBatScript(scriptPath: string, elevated = false) {
+  const normalizedPath = scriptPath.replace(/\//g, '\\');
+
+  const child = elevated
+    ? spawn(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-ExecutionPolicy',
+          'Bypass',
+          '-Command',
+          `Start-Process cmd.exe -Verb RunAs -ArgumentList '/k','"${normalizedPath}"'`,
+        ],
+        {
+          detached: true,
+          stdio: 'ignore',
+        }
+      )
+    : spawn('cmd.exe', ['/c', 'start', '"Model Installer"', 'cmd.exe', '/k', normalizedPath], {
+        detached: true,
+        stdio: 'ignore',
+      });
+
   child.unref();
+}
+
+function resolveScriptPath(scriptBaseName: string, platform: DesktopPlatform): string {
+  const extension = platform === 'win32' ? '.bat' : '.sh';
+  return join(getScriptsRoot(), `${scriptBaseName}${extension}`);
 }
 
 async function commandInPath(command: string) {
@@ -323,38 +337,6 @@ async function detectEnvironmentStatuses(platform: DesktopPlatform): Promise<Env
   return statuses;
 }
 
-async function checkGitBash(): Promise<GitBashStatus> {
-  if (process.platform !== 'win32') {
-    return {
-      available: true,
-      path: null,
-    };
-  }
-
-  for (const candidatePath of getWindowsGitBashPathCandidates()) {
-    if (await fileExists(candidatePath)) {
-      return {
-        available: true,
-        path: candidatePath,
-      };
-    }
-  }
-
-  return {
-    available: false,
-    path: null,
-  };
-}
-
-function openWindowsGitBashInstaller(scriptPath: string) {
-  const normalizedPath = scriptPath.replace(/\//g, '\\');
-  const child = spawn('cmd.exe', ['/c', 'start', '"Git Bash Installer"', 'cmd.exe', '/k', normalizedPath], {
-    detached: true,
-    stdio: 'ignore',
-  });
-  child.unref();
-}
-
 function assertModelSupport(option: ProviderModelOption) {
   const platform = resolveDesktopPlatform();
 
@@ -393,6 +375,40 @@ async function getModelTemplate(payload: ApplyModelTemplatePayload): Promise<Mod
   };
 }
 
+async function checkProviderInstalled(payload: InstallProviderPayload): Promise<ProviderInstallStatus> {
+  const { option } = await findInstallTarget(payload);
+
+  if (!option.checkCommand) {
+    return {
+      providerId: payload.providerId,
+      modelOptionId: payload.modelOptionId,
+      installed: false,
+    };
+  }
+
+  // 检查命令是否存在
+  const installed = await commandExists(option.checkCommand, ['--version']);
+
+  // 如果已安装，尝试获取版本
+  let version: string | undefined;
+  if (installed) {
+    try {
+      const result = await execCommand(option.checkCommand, ['--version']);
+      // 取第一行作为版本信息
+      version = result.stdout.split('\n')[0].trim() || undefined;
+    } catch {
+      // 版本获取失败不影响已安装状态
+    }
+  }
+
+  return {
+    providerId: payload.providerId,
+    modelOptionId: payload.modelOptionId,
+    installed,
+    version,
+  };
+}
+
 async function installProvider(payload: InstallProviderPayload) {
   const { option } = await findInstallTarget(payload);
   assertModelSupport(option);
@@ -401,20 +417,16 @@ async function installProvider(payload: InstallProviderPayload) {
     throw new Error(`当前模型目标没有脚本文件: ${option.name}`);
   }
 
-  const scriptPath = join(getScriptsRoot(), option.scriptFile);
+  const platform = resolveDesktopPlatform();
+  const scriptPath = resolveScriptPath(option.scriptFile, platform);
 
-  if (process.platform === 'win32') {
-    const gitBashStatus = await checkGitBash();
-
-    if (!gitBashStatus.available) {
-      throw new Error('Windows 缺少 Git Bash，请先点击下方按钮安装 Git Bash。');
-    }
-
-    openWindowsTerminal(scriptPath);
+  if (platform === 'win32') {
+    // Windows 直接执行 .bat 脚本
+    openWindowsBatScript(scriptPath);
     return;
   }
 
-  if (process.platform === 'darwin') {
+  if (platform === 'darwin') {
     openMacTerminal(scriptPath);
     return;
   }
@@ -422,30 +434,16 @@ async function installProvider(payload: InstallProviderPayload) {
   await openLinuxTerminal(scriptPath);
 }
 
-async function installGitBash() {
-  if (process.platform !== 'win32') {
-    throw new Error('只有 Windows 需要安装 Git Bash。');
-  }
-
-  const scriptPath = join(getScriptsRoot(), 'gitBash_install.bat');
-  openWindowsGitBashInstaller(scriptPath);
-}
-
 async function installEnvironment() {
-  const scriptPath = join(getScriptsRoot(), 'install.sh');
+  const platform = resolveDesktopPlatform();
+  const scriptPath = resolveScriptPath('install', platform);
 
-  if (process.platform === 'win32') {
-    const gitBashStatus = await checkGitBash();
-
-    if (!gitBashStatus.available) {
-      throw new Error('Windows 缺少 Git Bash，请先安装 Git Bash 再执行环境安装。');
-    }
-
-    openWindowsTerminal(scriptPath);
+  if (platform === 'win32') {
+    openWindowsBatScript(scriptPath, true);
     return;
   }
 
-  if (process.platform === 'darwin') {
+  if (platform === 'darwin') {
     openMacTerminal(scriptPath);
     return;
   }
@@ -463,10 +461,11 @@ export function registerDesktopHandlers() {
   ipcMain.handle('workspace:install-provider', (_event: IpcMainInvokeEvent, payload: InstallProviderPayload) =>
     installProvider(payload)
   );
+  ipcMain.handle('workspace:check-provider-installed', (_event: IpcMainInvokeEvent, payload: InstallProviderPayload) =>
+    checkProviderInstalled(payload)
+  );
   ipcMain.handle('workspace:model-template', (_event: IpcMainInvokeEvent, payload: ApplyModelTemplatePayload) =>
     getModelTemplate(payload)
   );
-  ipcMain.handle('workspace:check-git-bash', () => checkGitBash());
-  ipcMain.handle('workspace:install-git-bash', () => installGitBash());
   ipcMain.handle('workspace:install-environment', () => installEnvironment());
 }

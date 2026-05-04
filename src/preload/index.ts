@@ -12,9 +12,8 @@ const api: DesktopBridge = {
   seedTemplates: () => ipcRenderer.invoke('workspace:seed'),
   openWorkspaceDirectory: () => ipcRenderer.invoke('workspace:open-workspace-directory'),
   installProvider: (payload: InstallProviderPayload) => ipcRenderer.invoke('workspace:install-provider', payload),
+  checkProviderInstalled: (payload: InstallProviderPayload) => ipcRenderer.invoke('workspace:check-provider-installed', payload),
   getModelTemplate: (payload: ApplyModelTemplatePayload) => ipcRenderer.invoke('workspace:model-template', payload),
-  checkGitBash: () => ipcRenderer.invoke('workspace:check-git-bash'),
-  installGitBash: () => ipcRenderer.invoke('workspace:install-git-bash'),
   installEnvironment: () => ipcRenderer.invoke('workspace:install-environment'),
 };
 

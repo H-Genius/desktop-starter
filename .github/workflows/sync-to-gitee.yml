@@ -1,0 +1,42 @@
+name: Sync to Gitee
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure npm mirror
+        run: npm config set registry https://registry.npmmirror.com
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get release info
+        id: release
+        run: |
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build distributables
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run dist
+
+      - name: Upload to Gitee Release
+        uses: muwoo/upload-to-gitee@v1
+        with:
+          gitee_token: ${{ secrets.GITEE_TOKEN }}
+          gitee_owner: ${{ github.repository_owner }}
+          gitee_repo: ${{ github.event.repository.name }}
+          release_tag: ${{ steps.release.outputs.tag }}
+          file_path: release/*

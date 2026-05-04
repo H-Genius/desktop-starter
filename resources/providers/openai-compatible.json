@@ -13,7 +13,8 @@
       "description": "Install the official OpenAI terminal coding agent.",
       "supportedPlatforms": ["darwin", "linux", "win32"],
       "requirements": [],
-      "scriptFile": "install-openai-cli.sh",
+      "scriptFile": "install-openai-cli",
+      "checkCommand": "codex",
       "authTemplate": "{\n  \"provider\": \"openai-compatible\",\n  \"apiKey\": \"replace-with-openai-api-key\",\n  \"baseUrl\": \"https://api.openai.com/v1\",\n  \"organization\": \"\",\n  \"notes\": \"Use your OpenAI-compatible API credentials here.\"\n}\n",
       "configTemplate": "# OpenAI-compatible runtime configuration\nmodel_provider = \"openai-compatible\"\nmodel = \"gpt-5.4\"\nmodel_reasoning_effort = \"high\"\ndisable_response_storage = true\n\n[model_providers.openai-compatible]\nname = \"openai-compatible\"\nbase_url = \"https://api.openai.com/v1\"\nwire_api = \"responses\"\n\n[paths]\nworkspace = \"~/projects\"\n"
     }

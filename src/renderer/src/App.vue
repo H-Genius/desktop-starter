@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import type { GitBashStatus, ProviderManifest, ProviderModelOption, WorkspaceSnapshot } from '../../shared/contracts.js';
+import type { ProviderInstallStatus, ProviderManifest, ProviderModelOption, WorkspaceSnapshot } from '../../shared/contracts.js';
 
 const snapshot = ref<WorkspaceSnapshot | null>(null);
 const authContent = ref('');
@@ -9,7 +9,8 @@ const saveState = ref<'idle' | 'saving' | 'saved'>('idle');
 const notice = ref('准备就绪。');
 const selectedProviderId = ref('');
 const selectedInstallOptionId = ref('');
-const gitBashStatus = ref<GitBashStatus | null>(null);
+const providerInstallStatus = ref<ProviderInstallStatus | null>(null);
+const checkingInstallStatus = ref(false);
 
 const installableProviders = computed<ProviderManifest[]>(() => {
   const platform = snapshot.value?.platform;
@@ -56,7 +57,7 @@ const missingEnvironmentStatuses = computed(() => {
 });
 const terminalEnvironmentLabel = computed(() => {
   if (isWindows.value) {
-    return 'Windows Git Bash';
+    return 'Windows 终端环境';
   }
 
   if (snapshot.value?.platform === 'darwin') {
@@ -76,15 +77,6 @@ const authStatus = computed(() => {
 
   return snapshot.value.authValidJson ? 'JSON 有效' : 'JSON 待修正';
 });
-
-async function refreshGitBashStatus() {
-  if (!isWindows.value) {
-    gitBashStatus.value = null;
-    return;
-  }
-
-  gitBashStatus.value = await window.modelDesktop.checkGitBash();
-}
 
 async function refreshWorkspace() {
   const next = await window.modelDesktop.loadWorkspace();
@@ -108,7 +100,7 @@ async function refreshWorkspace() {
     selectedInstallOptionId.value = nextOptions[0]?.id ?? '';
   }
 
-  await refreshGitBashStatus();
+  await checkSelectedProviderInstallStatus();
 }
 
 async function saveWorkspace() {
@@ -141,25 +133,8 @@ async function openWorkspaceDirectory() {
   await window.modelDesktop.openWorkspaceDirectory();
 }
 
-async function installGitBash() {
-  notice.value = '正在打开 Git Bash 安装窗口...';
-
-  try {
-    await window.modelDesktop.installGitBash();
-    notice.value = '已调起 Git Bash 安装窗口，安装完成后请点刷新。';
-  } catch (error) {
-    notice.value = `无法启动 Git Bash 安装: ${String(error)}`;
-  }
-}
-
 async function installEnvironment() {
   if (missingEnvironmentStatuses.value.length === 0) {
-    if (isWindows.value && !gitBashStatus.value?.available) {
-      notice.value = '前置环境已齐全，但 Windows 还缺少 Git Bash。';
-      window.alert('前置环境已准备好，但 Windows 还缺少 Git Bash，请先安装 Git Bash。');
-      return;
-    }
-
     notice.value = '前置环境已准备好，无需重复安装。';
     window.alert('前置环境已准备好，无需重复安装。');
     return;
@@ -175,10 +150,58 @@ async function installEnvironment() {
   }
 }
 
+async function checkSelectedProviderInstallStatus() {
+  if (!selectedProvider.value || !selectedModelOption.value) {
+    providerInstallStatus.value = null;
+    return;
+  }
+
+  checkingInstallStatus.value = true;
+  try {
+    providerInstallStatus.value = await window.modelDesktop.checkProviderInstalled({
+      providerId: selectedProvider.value.id,
+      modelOptionId: selectedModelOption.value.id,
+    });
+  } catch {
+    providerInstallStatus.value = null;
+  } finally {
+    checkingInstallStatus.value = false;
+  }
+}
+
 async function installSelectedModel() {
   if (!selectedProvider.value || !selectedModelOption.value) {
     notice.value = '当前没有可执行的模型脚本。';
     return;
+  }
+
+  // 先检查是否已安装（如果没有缓存的状态）
+  if (!providerInstallStatus.value) {
+    checkingInstallStatus.value = true;
+    try {
+      const status = await window.modelDesktop.checkProviderInstalled({
+        providerId: selectedProvider.value.id,
+        modelOptionId: selectedModelOption.value.id,
+      });
+      providerInstallStatus.value = status;
+
+      // 如果已安装，提示用户
+      if (status.installed) {
+        notice.value = `${selectedModelOption.value.name} 已安装${status.version ? `（版本：${status.version}）` : ''}。点击"重新安装"可再次执行安装脚本。`;
+        return;
+      }
+    } catch {
+      // 检查失败则继续执行安装
+    } finally {
+      checkingInstallStatus.value = false;
+    }
+  } else if (providerInstallStatus.value.installed) {
+    // 已有缓存状态且已安装，用户点击了"重新安装"
+    // 弹窗确认
+    const confirm = window.confirm(`${selectedModelOption.value.name} 已安装${providerInstallStatus.value.version ? `（版本：${providerInstallStatus.value.version}）` : ''}。\n确定要重新安装吗？`);
+    if (!confirm) {
+      return;
+    }
   }
 
   notice.value = `正在打开终端执行 ${selectedModelOption.value.name} 脚本...`;
@@ -188,8 +211,7 @@ async function installSelectedModel() {
       providerId: selectedProvider.value.id,
       modelOptionId: selectedModelOption.value.id,
     });
-    notice.value =
-      `已调起系统终端，请在终端窗口中执行 ${selectedModelOption.value.name} 脚本。`;
+    notice.value = `已调起系统终端，请在终端窗口中完成 ${selectedModelOption.value.name} 安装。`;
   } catch (error) {
     notice.value = `无法执行模型目标动作: ${String(error)}`;
   }
@@ -227,6 +249,11 @@ onMounted(() => {
 
 watch(selectedProviderId, () => {
   selectedInstallOptionId.value = availableModelOptions.value[0]?.id ?? '';
+  void checkSelectedProviderInstallStatus();
+});
+
+watch(selectedInstallOptionId, () => {
+  void checkSelectedProviderInstallStatus();
 });
 </script>
 
@@ -292,17 +319,9 @@ watch(selectedProviderId, () => {
           <div class="requirements">
             <p>{{ terminalEnvironmentLabel }}</p>
             <ul>
-              <li v-if="isWindows && gitBashStatus?.available">已检测到 Git Bash{{ gitBashStatus.path ? `：${gitBashStatus.path}` : '' }}</li>
-              <li v-else-if="isWindows">未检测到 Git Bash，Windows 下执行 `.sh` 脚本前需要先安装。</li>
+              <li v-if="isWindows">Windows 使用原生 `.bat` 脚本执行安装流程。</li>
               <li v-else>当前系统已自带 Bash / Terminal，可直接执行安装脚本。</li>
             </ul>
-            <button
-              v-if="isWindows && !gitBashStatus?.available"
-              class="ghost install-button"
-              @click="installGitBash"
-            >
-              安装 Git Bash
-            </button>
           </div>
 
           <label>
@@ -342,8 +361,23 @@ watch(selectedProviderId, () => {
             </ul>
           </div>
 
-          <button class="primary install-button" :disabled="!selectedModelOption" @click="installSelectedModel">
-            执行安装脚本
+          <!-- 安装状态提示 -->
+          <div v-if="checkingInstallStatus" class="requirements">
+            <p>正在检测安装状态...</p>
+          </div>
+          <div v-else-if="providerInstallStatus?.installed" class="requirements">
+            <p>安装状态</p>
+            <ul>
+              <li>✅ {{ selectedModelOption?.name }} 已安装{{ providerInstallStatus.version ? `（版本：${providerInstallStatus.version}）` : '' }}</li>
+            </ul>
+          </div>
+
+          <button
+            class="primary install-button"
+            :disabled="!selectedModelOption || checkingInstallStatus"
+            @click="installSelectedModel"
+          >
+            {{ providerInstallStatus?.installed ? '重新安装' : '执行安装脚本' }}
           </button>
           <button class="ghost install-button" :disabled="!canApplyTemplate" @click="applySelectedModelTemplate">
             套用到配置
