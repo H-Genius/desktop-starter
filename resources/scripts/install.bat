@@ -1,20 +1,16 @@
 @echo off
 chcp 65001 >nul
 color 0F
-cls
 
-:: 检查管理员权限
+:: 检查管理员权限，如果没有则自动请求提升权限
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ==============================================
-    echo    [错误] 请以管理员身份运行此脚本！
-    echo    右键点击脚本，选择"以管理员身份运行"
-    echo ==============================================
-    echo.
-    pause
-    exit /b 1
+    echo 正在请求管理员权限...
+    powershell -Command "Start-Process cmd.exe -Verb RunAs -ArgumentList '/k \"%~f0\"'"
+    exit /b 0
 )
 
+cls
 echo ==============================================
 echo    Node.js 自动安装 + Miniconda 手动安装
 echo ==============================================
