@@ -188,27 +188,42 @@ function openMacTerminal(scriptPath: string) {
 function openWindowsBatScript(scriptPath: string, elevated = false) {
   const normalizedPath = scriptPath.replace(/\//g, '\\');
 
-  const child = elevated
-    ? spawn(
-        'powershell.exe',
-        [
-          '-NoProfile',
-          '-ExecutionPolicy',
-          'Bypass',
-          '-Command',
-          `Start-Process cmd.exe -Verb RunAs -ArgumentList '/k','"${normalizedPath}"'`,
-        ],
-        {
-          detached: true,
-          stdio: 'ignore',
-        }
-      )
-    : spawn('cmd.exe', ['/c', 'start', '"Model Installer"', 'cmd.exe', '/k', normalizedPath], {
+  if (elevated) {
+    // 使用管理员权限运行
+    const child = spawn(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        `Start-Process cmd.exe -Verb RunAs -ArgumentList '/k "${normalizedPath}"'`,
+      ],
+      {
         detached: true,
         stdio: 'ignore',
-      });
+      }
+    );
+    child.on('error', (err) => {
+      console.error('Failed to start elevated process:', err);
+    });
+    child.unref();
+  } else {
+    // 普通权限运行
+    // 方式1: 使用 start 命令通过 cmd.exe 打开新窗口
+    const startCommand = `start "Model Installer" cmd.exe /k "${normalizedPath}"`;
 
-  child.unref();
+    const child = spawn('cmd.exe', ['/c', startCommand], {
+      detached: true,
+      stdio: 'ignore',
+    });
+
+    child.on('error', (err) => {
+      console.error('Failed to start cmd process:', err);
+    });
+
+    child.unref();
+  }
 }
 
 function resolveScriptPath(scriptBaseName: string, platform: DesktopPlatform): string {
@@ -420,6 +435,17 @@ async function installProvider(payload: InstallProviderPayload) {
   const platform = resolveDesktopPlatform();
   const scriptPath = resolveScriptPath(option.scriptFile, platform);
 
+  // 调试日志
+  console.log('[installProvider] scriptFile:', option.scriptFile);
+  console.log('[installProvider] platform:', platform);
+  console.log('[installProvider] scriptPath:', scriptPath);
+  console.log('[installProvider] scriptsRoot:', getScriptsRoot());
+
+  // 检查脚本文件是否存在
+  if (!(await fileExists(scriptPath))) {
+    throw new Error(`脚本文件不存在: ${scriptPath}\n请检查 resources/scripts 目录是否包含 ${option.scriptFile}${platform === 'win32' ? '.bat' : '.sh'}`);
+  }
+
   if (platform === 'win32') {
     // Windows 直接执行 .bat 脚本
     openWindowsBatScript(scriptPath);
@@ -438,8 +464,20 @@ async function installEnvironment() {
   const platform = resolveDesktopPlatform();
   const scriptPath = resolveScriptPath('install', platform);
 
+  // 调试日志
+  console.log('[installEnvironment] platform:', platform);
+  console.log('[installEnvironment] scriptPath:', scriptPath);
+  console.log('[installEnvironment] scriptsRoot:', getScriptsRoot());
+
+  // 检查脚本文件是否存在
+  if (!(await fileExists(scriptPath))) {
+    throw new Error(`脚本文件不存在: ${scriptPath}\n请检查 resources/scripts 目录是否包含 install${platform === 'win32' ? '.bat' : '.sh'}`);
+  }
+
   if (platform === 'win32') {
-    openWindowsBatScript(scriptPath, true);
+    // Launch normally first to guarantee a visible console window on Windows.
+    // The script itself performs an admin check and prompts the user when needed.
+    openWindowsBatScript(scriptPath);
     return;
   }
 
